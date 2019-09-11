@@ -1,3 +1,4 @@
+#include <iostream>
 #include "inc/scmp_queue.h"
 
 int main(int argc, char *argv[])
@@ -8,5 +9,9 @@ int main(int argc, char *argv[])
     queue.push(6);
     queue.push(7);
 
+    auto value = queue.pop();
+
+    std::cout << value << std::endl;
+    
     return 0;
 }

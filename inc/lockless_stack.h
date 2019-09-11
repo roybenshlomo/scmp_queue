@@ -34,7 +34,7 @@ class lockless_stack
         /*
          * pop an element from the stack
          */
-        T&& pop();
+        T pop();
 
         /*
          * check if the stack is empty (not thread safe)
@@ -78,7 +78,7 @@ void lockless_stack<T>::push(const T & data)
 }
 
 template <class T>
-T&& lockless_stack<T>::pop()
+T lockless_stack<T>::pop()
 {
     lockless_stack::node * current_head = nullptr;
 
@@ -93,5 +93,5 @@ T&& lockless_stack<T>::pop()
     
     T return_value = current_head->m_data;
     delete current_head;
-    return std::move(return_value);
+    return return_value;
 }
