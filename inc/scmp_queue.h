@@ -8,31 +8,32 @@
 template <class T>
 class scmp_queue
 {
-    public:
-        /*
-         * constructor
-         */
-        scmp_queue(std::uint64_t blocking_interval_us = 5000);
+public:
+    /*
+     * constructor
+     */
+    scmp_queue(std::uint64_t blocking_interval_us = 5000);
 
-        /*
-         * destructor
-         */
-        ~scmp_queue();
+    /*
+     * destructor
+     */
+    ~scmp_queue();
 
-        /*
-         * push an element to the queue - this is called from multiple threads
-         */
-        void push(const T &item);
+    /*
+     * push an element to the queue - this is called from multiple threads
+     */
+    void push(const T & item);
 
-        /*
-         * pop an item from the queue - this is called from a single thread
-         */
-        T pop();
-    private:
-        std::atomic<lockless_stack<T>*> m_producers_stack;
-        std::atomic<lockless_stack<T>*> m_consumer_stack;
-        std::list<T> m_consumer_list;
-        std::uint64_t m_blocking_interval_us;
+    /*
+     * pop an item from the queue - this is called from a single thread
+     */
+    T pop();
+
+private:
+    std::atomic<lockless_stack<T> *> m_producers_stack;
+    std::atomic<lockless_stack<T> *> m_consumer_stack;
+    std::list<T> m_consumer_list;
+    std::uint64_t m_blocking_interval_us;
 };
 
 template <class T>
@@ -45,7 +46,7 @@ scmp_queue<T>::scmp_queue(std::uint64_t blocking_interval_us /* = 5000 */)
     m_blocking_interval_us = blocking_interval_us;
 }
 
-template<class T>
+template <class T>
 scmp_queue<T>::~scmp_queue()
 {
     delete m_producers_stack;
@@ -53,7 +54,7 @@ scmp_queue<T>::~scmp_queue()
 }
 
 template <class T>
-void scmp_queue<T>::push(const T &item)
+void scmp_queue<T>::push(const T & item)
 {
     (*m_producers_stack).push(item);
 }
@@ -70,11 +71,10 @@ T scmp_queue<T>::pop()
      * the value as-is. If there isn't anything in the consumer queue, we flip the stacks
      */
     if (m_consumer_list.empty()) {
-        do
-        {
+        do {
             // swap the stacks and review the stack filled by the producer threads
             m_consumer_stack = m_producers_stack.exchange(m_consumer_stack);
-            
+
             // check if the stack is empty, if so we need to blocking-wait for it to be filled with something
             if ((*m_consumer_stack).empty()) {
                 std::this_thread::sleep_for(std::chrono::microseconds(m_blocking_interval_us));
