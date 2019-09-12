@@ -40,10 +40,12 @@ blocking_queue<int> queue;
 scmp_queue<int> queue;
 #endif
 
-std::atomic<bool> stop_consuming(false);
+int n_threads = 1000;
+int n_items = 1000;
+
 void producer_thread()
 {
-    for (int i=0; i<100; i++) {
+    for (int i=0; i<n_items; i++) {
         queue.push(i);
     }
 }
@@ -52,7 +54,7 @@ void producer_thread()
 void consumer_queue()
 {
     uint64_t counter = 0;
-    while (!stop_consuming) {
+    while (counter < (n_threads * n_items)) {
         queue.pop();
         counter++;
     }
@@ -65,7 +67,7 @@ int main(int argc, char *argv[])
     std::thread consumer(consumer_queue);
     std::list<std::thread> producers;
 
-    for (int i=0;i<100;i++) {
+    for (int i=0;i<n_threads;i++) {
         producers.push_front(std::move(std::thread(producer_thread)));
     }
 
@@ -73,7 +75,6 @@ int main(int argc, char *argv[])
             i.join();
     }
 
-    stop_consuming.store(true);
     consumer.join();
 
     return 0;
