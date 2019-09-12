@@ -1,7 +1,8 @@
 #pragma once
 #include <list>
 #include <atomic>
-#include <condition_variable>
+#include <chrono>
+#include <thread>
 #include "lockless_stack.h"
 
 template <class T>
@@ -11,7 +12,7 @@ class scmp_queue
         /*
          * constructor
          */
-        scmp_queue();
+        scmp_queue(std::uint64_t blocking_interval_us = 5000);
 
         /*
          * destructor
@@ -30,16 +31,18 @@ class scmp_queue
     private:
         std::atomic<lockless_stack<T>*> m_producers_stack;
         std::atomic<lockless_stack<T>*> m_consumer_stack;
-
-        std::list<T> m_consumer_list;    
+        std::list<T> m_consumer_list;
+        std::uint64_t m_blocking_interval_us;
 };
 
 template <class T>
-scmp_queue<T>::scmp_queue()
+scmp_queue<T>::scmp_queue(std::uint64_t blocking_interval_us /* = 5000 */)
 {
     // create two lockless stacks
     m_producers_stack = new lockless_stack<T>();
     m_consumer_stack = new lockless_stack<T>();
+
+    m_blocking_interval_us = blocking_interval_us;
 }
 
 template<class T>
@@ -74,7 +77,7 @@ T scmp_queue<T>::pop()
             
             // check if the stack is empty, if so we need to blocking-wait for it to be filled with something
             if ((*m_consumer_stack).empty()) {
-
+                std::this_thread::sleep_for(std::chrono::microseconds(m_blocking_interval_us));
             } else {
                 while (!(*m_consumer_stack).empty()) {
                     m_consumer_list.push_front((*m_consumer_stack).pop());
