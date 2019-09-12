@@ -23,7 +23,7 @@ class blocking_queue
         T pop()
         {
             std::unique_lock<std::mutex> lock(m_lock);
-            m_cv.wait(lock, [&] { return !m_queue.empty();});
+            m_cv.wait(lock, [&](){ return !m_queue.empty();});
 
             auto value = m_queue.front();
             m_queue.pop();
@@ -35,12 +35,12 @@ class blocking_queue
         std::condition_variable m_cv;
 };
 
-    blocking_queue<int> queue;
+blocking_queue<int> queue;
 #else
-    scmp_queue<int> queue;
+scmp_queue<int> queue;
 #endif
-    std::atomic<bool> stop_consuming = false;
 
+std::atomic<bool> stop_consuming(false);
 void producer_thread()
 {
     for (int i=0; i<100; i++) {
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
             i.join();
     }
 
-    stop_consuming = true;
+    stop_consuming.store(true);
     consumer.join();
 
     return 0;
